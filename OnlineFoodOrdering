@@ -1,0 +1,215 @@
+class Product:
+    def __init__(self, code, title, cost, category):
+        self.code = code
+        self.title = title
+        self.cost = cost
+        self.category = category
+
+class ProductCatalog:
+    def __init__(self):
+        # Hardcoded product list with categories
+        self.products = [
+            Product(1, "Veggie Pizza", 12.99, "Pizza"),
+            Product(2, "Cheese Burger", 8.99, "Burger"),
+            Product(3, "Spaghetti", 10.49, "Pasta"),
+            Product(4, "Caesar Salad", 6.99, "Salad"),
+            Product(5, "Pepperoni Pizza", 14.99, "Pizza"),
+            Product(6, "Grilled Chicken Salad", 9.99, "Salad"),
+        ]
+
+    def show_catalog(self):
+        print("\nAvailable Products:")
+        for product in self.products:
+            print(f"{product.code}. {product.title} - ${product.cost:.2f} (Category: {product.category})")
+
+    def find_product(self, code):
+        for product in self.products:
+            if product.code == code:
+                return product
+        return None
+
+    def search_product(self, search_term):
+        results = [product for product in self.products if search_term.lower() in product.title.lower()]
+        if not results:
+            print("No products found.")
+            return
+        print("\nSearch Results:")
+        for product in results:
+            print(f"{product.code}. {product.title} - ${product.cost:.2f} (Category: {product.category})")
+
+class CustomerBasket:
+    def __init__(self):
+        self.items = []
+
+    def add_item(self, product, quantity):
+        for _ in range(quantity):
+            self.items.append(product)
+        print(f"{quantity} x {product.title} added to your basket.")
+
+    def view_basket(self):
+        if not self.items:
+            print("Basket is currently empty.")
+            return
+        print("\nBasket Contents:")
+        total_cost = 0
+        for product in self.items:
+            print(f"{product.title} - ${product.cost:.2f}")
+            total_cost += product.cost
+        print(f"Total Cost: ${total_cost:.2f}\n")
+
+    def empty_basket(self):
+        self.items = []
+
+class Purchase:
+    def __init__(self, purchase_id, items, delivery_option):
+        self.purchase_id = purchase_id
+        self.items = items
+        self.delivery_option = delivery_option
+        self.status = "Awaiting Confirmation"
+
+    def show_purchase(self):
+        print(f"\nOrder ID: {self.purchase_id}")
+        total_cost = 0
+        for product in self.items:
+            print(f"{product.title} - ${product.cost:.2f}")
+            total_cost += product.cost
+        print(f"Delivery Option: {self.delivery_option}")
+        print(f"Total: ${total_cost:.2f}")
+        print(f"Status: {self.status}\n")
+
+class ManagerDashboard:
+    def __init__(self, catalog, orders):
+        self.catalog = catalog
+        self.orders = orders
+
+    def show_all_orders(self):
+        if not self.orders:
+            print("No orders yet.")
+            return
+        print("\nAll Orders:")
+        for order in self.orders:
+            order.show_purchase()
+
+    def modify_order_status(self, purchase_id, status):
+        for order in self.orders:
+            if order.purchase_id == purchase_id:
+                order.status = status
+                print(f"Order {purchase_id} status updated to '{status}'.")
+                return
+        print("Order not located.")
+
+    def display_admin_options(self):
+        print("\nManager Dashboard:")
+        print("1. Review Orders")
+        print("2. Adjust Order Status")
+        print("3. Show Product Catalog")
+        print("4. Logout")
+
+class FoodOrderSystem:
+    def __init__(self):
+        self.catalog = ProductCatalog()
+        self.basket = CustomerBasket()
+        self.orders = []
+        self.next_order_id = 1
+        self.manager_dashboard = ManagerDashboard(self.catalog, self.orders)
+
+    def customer_options(self):
+        while True:
+            print("\nCustomer Menu:")
+            print("1. Browse Products")
+            print("2. Search Products")
+            print("3. Add to Basket")
+            print("4. Review Basket")
+            print("5. Finalize Purchase")
+            print("6. View Order History")
+            print("7. Exit")
+
+            choice = input("Choose an action: ")
+
+            if choice == "1":
+                self.catalog.show_catalog()
+            elif choice == "2":
+                search_term = input("Enter product name to search: ")
+                self.catalog.search_product(search_term)
+            elif choice == "3":
+                self.catalog.show_catalog()
+                code = int(input("Enter the product number to add to basket: "))
+                product = self.catalog.find_product(code)
+                if product:
+                    quantity = int(input(f"How many of {product.title} would you like to add? "))
+                    self.basket.add_item(product, quantity)
+                else:
+                    print("Invalid product code.")
+            elif choice == "4":
+                self.basket.view_basket()
+            elif choice == "5":
+                if not self.basket.items:
+                    print("Your basket is empty! Add items before checking out.")
+                else:
+                    self.process_order()
+            elif choice == "6":
+                self.view_order_history()
+            elif choice == "7":
+                print("Exiting Customer Menu.")
+                break
+            else:
+                print("Invalid selection. Please try again.")
+
+    def process_order(self):
+        delivery_option = input("Choose Delivery Option (1. Delivery, 2. Pickup): ")
+        delivery_option = "Delivery" if delivery_option == "1" else "Pickup"
+        new_order = Purchase(self.next_order_id, list(self.basket.items), delivery_option)
+        self.orders.append(new_order)
+        print(f"Order placed successfully! Your Order ID is: {self.next_order_id}")
+        self.next_order_id += 1
+        self.basket.empty_basket()
+
+    def view_order_history(self):
+        if not self.orders:
+            print("No past orders.")
+            return
+        print("\nOrder History:")
+        for order in self.orders:
+            order.show_purchase()
+
+    def admin_options(self):
+        while True:
+            self.manager_dashboard.display_admin_options()
+            choice = input("Select an option: ")
+
+            if choice == "1":
+                self.manager_dashboard.show_all_orders()
+            elif choice == "2":
+                purchase_id = int(input("Enter Order ID to update: "))
+                status = input("Enter new status (Pending, Confirmed, Delivered): ")
+                self.manager_dashboard.modify_order_status(purchase_id, status)
+            elif choice == "3":
+                self.catalog.show_catalog()
+            elif choice == "4":
+                print("Logging out of Manager Dashboard.")
+                break
+            else:
+                print("Invalid option. Try again.")
+
+    def launch_system(self):
+        while True:
+            print("\nWelcome to the Food Order System!")
+            print("1. Customer")
+            print("2. Manager")
+            print("3. Exit")
+            role = input("Choose your role: ")
+
+            if role == "1":
+                self.customer_options()
+            elif role == "2":
+                self.admin_options()
+            elif role == "3":
+                print("Thank you for using our system. Goodbye!")
+                break
+            else:
+                print("Invalid option. Please select again.")
+
+# Execute the system
+if __name__ == "__main__":
+    system = FoodOrderSystem()
+    system.launch_system()
